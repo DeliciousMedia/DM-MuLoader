@@ -1,0 +1,11 @@
+{
+  "name": "deliciousmedia/dm-muloader",
+  "description": "DM Must-Use Plugin Loader, automatically loads WordPress plugins from subfolders within the mu-plugins folder.",
+  "homepage": "https://github.com/DeliciousMedia/DM-MuLoader",
+  "license": "GPL-3.0-or-later",
+  "type": "wordpress-muplugin",
+  "require": {
+    "php": ">=7.0",
+    "composer/installers": "v1.0.6"
+  }
+}
