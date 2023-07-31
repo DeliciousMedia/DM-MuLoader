@@ -15,16 +15,17 @@ function dmmuloader_find_muplugins() {
 	if ( ! function_exists( 'get_plugins' ) ) {
 		require ABSPATH . 'wp-admin/includes/plugin.php';
 	}
+
 	$mu_plugins = [];
 
 	foreach ( get_plugins( '/../mu-plugins/' ) as $muplugin_file => $plugin_data ) {
 		// Files within the mu-plugins folder will already be loaded, so skip them.
-		if ( '.' == dirname( $muplugin_file ) ) {
+		if ( '.' === dirname( $muplugin_file ) ) {
 			continue;
 		}
 
 		// No need to include this file.
-		if ( 'dm-muloader' == dirname( $muplugin_file ) ) {
+		if ( 'dm-muloader' === dirname( $muplugin_file ) ) {
 			continue;
 		}
 
@@ -32,9 +33,54 @@ function dmmuloader_find_muplugins() {
 
 	}
 
+	// Allow the site-config plugin to be loaded before all other mu-plugins; this is desirable as
+	// it allows us to configure other mu-plugins, to avoid issues with previous sites we won't make this a default.
+	if ( defined( 'DMMULOADER_SITE_CONFIG_FIRST' ) && true === DMMULOADER_SITE_CONFIG_FIRST ) {
+
+		// If we have a site-config plugin, load it first.
+		$site_config_key = array_search( 'site-config/site-config.php', $mu_plugins, true );
+
+		if ( false !== $site_config_key ) {
+			$mu_plugins = array_merge( [ 0 => 'site-config/site-config.php' ], $mu_plugins );
+		}
+	}
+
 	return $mu_plugins;
 
 }
+
+/**
+ * Check if the file used to load this plugin in the root muplugins folder is up-to-date,
+ * and update it if required.
+ *
+ * @return void
+ */
+function dmmuloader_update_loader() {
+
+	// No need to update if we have a transient set; as we flush transients on deployment.
+	$updated = get_transient( 'dmmuloader_updated' );
+	if ( 'yes' === $updated ) {
+		return;
+	}
+
+	$plugin_folder_file = untrailingslashit( WPMU_PLUGIN_DIR ) . '/dm-muloader/dm-muloader.php';
+	$muplugin_file   = untrailingslashit( WPMU_PLUGIN_DIR ) . '/dm-muloader.php';
+
+	// If the file is already there, and it matches the version in this directory we don't need to do anything.
+	if ( file_exists( $muplugin_file ) ) {
+		$installed_plugin_data = get_plugin_data( $muplugin_file, false, false );
+		$this_plugin_data = get_plugin_data( $plugin_folder_file, false, false );
+		if ( $installed_plugin_data['Version'] === $this_plugin_data['Version'] ) {
+			set_transient( 'dmmuloader_updated', 'yes' );
+			return;
+		}
+	}
+
+	@copy( $plugin_folder_file, $muplugin_file );
+	set_transient( 'dmmuloader_updated', 'yes' );
+}
+add_action( 'admin_init', 'dmmuloader_update_loader', 1, 0 );
+
 
 /**
  * Get a list of mu-plugins from transients, if possible - otherwise build & cache it.
@@ -74,7 +120,8 @@ function dmmuloader_get_muplugins( $force_rebuild = false ) {
  * Actually include the mu-plugins.
  */
 add_action(
-	'muplugins_loaded', function() {
+	'muplugins_loaded',
+	function() {
 
 		$mu_plugins = dmmuloader_get_muplugins();
 
@@ -95,7 +142,8 @@ add_action(
  * Show the plugins on the Must-Use 'tab' of the plugins page.
  */
 add_action(
-	'pre_current_active_plugins', function () {
+	'pre_current_active_plugins',
+	function () {
 		global $plugins, $wp_list_table;
 
 		// Get a list of mu-plugins, force cache invalidation so we know it's up to date.
@@ -109,7 +157,6 @@ add_action(
 			if ( empty( $plugin_data['Name'] ) ) {
 				$plugin_data['Name'] = $plugin_file;
 			}
-
 			$plugins['mustuse'][ $plugin_file ] = $plugin_data;
 		}
 
@@ -134,17 +181,18 @@ add_action(
 		$wp_list_table->set_pagination_args(
 			[
 				'total_items' => $total_this_page,
-				'per_page' => $plugins_per_page,
+				'per_page'    => $plugins_per_page,
 			]
 		);
 	}
 );
 
 /**
- * Show the plugin filename in the network admin..
+ * Show the plugin filename in the network admin.
  */
 add_action(
-	'plugin_action_links', function ( $actions, $plugin_file, $plugin_data, $context ) {
+	'plugin_action_links',
+	function ( $actions, $plugin_file, $plugin_data, $context ) {
 
 		// Get a list of mu-plugins.
 		$mu_plugins = dmmuloader_get_muplugins( false );
@@ -154,5 +202,7 @@ add_action(
 		}
 		$actions[] = sprintf( '<span style="color:#333">File: <code>%s</code></span>', $plugin_file );
 		return $actions;
-	}, 10, 4
+	},
+	10,
+	4
 );
