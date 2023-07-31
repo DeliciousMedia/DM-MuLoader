@@ -3,7 +3,7 @@
  * Plugin Name: DM MuLoader
  * Plugin URI: https://github.com/DeliciousMedia/DM-MuLoader
  * Description: Automatically load must use plugins from subfolders.
- * Version: 2.2.0
+ * Version: 2.2.1
  * Author: Delicious Media Limited
  * Author URI: https://www.deliciousmedia.co.uk
  * Text Domain: dm-muloader

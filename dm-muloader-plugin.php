@@ -35,7 +35,7 @@ function dmmuloader_find_muplugins() {
 
 	// Allow the site-config plugin to be loaded before all other mu-plugins; this is desirable as
 	// it allows us to configure other mu-plugins, to avoid issues with previous sites we won't make this a default.
-	if ( defined( 'DMMULOADER_SITE_CONFIG_FIRST' ) && true === DMMULOADER_SITE_CONFIG_FIRST ) {
+	if ( defined( 'DMMULOADER_SITE_CONFIG_FIRST' ) && true == DMMULOADER_SITE_CONFIG_FIRST ) {
 
 		// If we have a site-config plugin, load it first.
 		$site_config_key = array_search( 'site-config/site-config.php', $mu_plugins, true );
@@ -201,6 +201,11 @@ add_action(
 			return $actions;
 		}
 		$actions[] = sprintf( '<span style="color:#333">File: <code>%s</code></span>', $plugin_file );
+
+		if ( defined( 'DMMULOADER_SITE_CONFIG_FIRST' ) && true == DMMULOADER_SITE_CONFIG_FIRST && 'site-config/site-config.php' === $plugin_file ) {
+			$actions[] = sprintf( ' Loaded First.', $plugin_file );
+		}
+
 		return $actions;
 	},
 	10,
